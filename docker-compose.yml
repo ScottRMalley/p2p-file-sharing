@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  node0:
+    build:
+      context: .
+      dockerfile: docker/nodes.Dockerfile
+
+    profiles: [ "node" ]
+    ports:
+      - "8080:8080"
+    environment:
+      SVC_PORT: "8080"
+      GIN_MODE: "release"
+    networks:
+      - node
+  node1:
+    build:
+      context: .
+      dockerfile: docker/nodes.Dockerfile
+    profiles: [ "node" ]
+    ports:
+      - "8081:8081"
+    environment:
+      SVC_PORT: "8081"
+      GIN_MODE: "release"
+    networks:
+      - node
+  node2:
+    build:
+      context: .
+      dockerfile: docker/nodes.Dockerfile
+    profiles: [ "node" ]
+    ports:
+      - "8082:8082"
+    environment:
+      SVC_PORT: "8082"
+      GIN_MODE: "release"
+    networks:
+      - node
+  client:
+    build:
+      context: .
+      dockerfile: docker/client.Dockerfile
+    profiles: [ "client" ]
+
+networks:
+  node:
