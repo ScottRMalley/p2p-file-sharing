@@ -5,7 +5,8 @@ services:
     build:
       context: .
       dockerfile: docker/nodes.Dockerfile
-
+      network: host
+    image: node-image
     profiles: [ "node" ]
     ports:
       - "8080:8080"
@@ -15,9 +16,9 @@ services:
     networks:
       - node
   node1:
-    build:
-      context: .
-      dockerfile: docker/nodes.Dockerfile
+    image: node-image
+    depends_on:
+      - node0
     profiles: [ "node" ]
     ports:
       - "8081:8081"
@@ -27,9 +28,9 @@ services:
     networks:
       - node
   node2:
-    build:
-      context: .
-      dockerfile: docker/nodes.Dockerfile
+    image: node-image
+    depends_on:
+      - node0
     profiles: [ "node" ]
     ports:
       - "8082:8082"

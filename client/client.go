@@ -1,7 +1,8 @@
-package p2p_file_challenge
+package client
 
 import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/scottrmalley/p2p-file-challenge/api"
 	"github.com/scottrmalley/p2p-file-challenge/proof"
@@ -25,33 +26,29 @@ func NewClient(persistence ClientPersistence, apiClient *api.Client) *Client {
 	}
 }
 
-func (c *Client) PostFiles(files [][]byte) error {
-	out, err := c.apiClient.PostFiles(
-		&api.FilesInput{
-			Files: func() []string {
-				out := make([]string, len(files))
-				for i, file := range files {
-					out[i] = hexutil.Encode(file)
-				}
-				return out
-			}(),
-		},
-	)
-	if err != nil {
-		return err
+func (c *Client) PostFiles(files [][]byte) (string, error) {
+	setId := uuid.New()
+	for i, file := range files {
+		if _, err := c.apiClient.PostFile(
+			&api.PostFileRequest{
+				SetId:    setId.String(),
+				SetCount: len(files),
+				Index:    i,
+				Content:  hexutil.Encode(file),
+			},
+		); err != nil {
+			return "", err
+		}
 	}
 
 	root, err := proof.Root(files)
 	if err != nil {
-		return err
+		return "", err
 	}
-	if hexutil.Encode(root) != out.Root {
-		return errors.Errorf("root mismatch: expected %s, server returned %s", root, out.Root)
+	if err := c.persistence.SetFileSet(setId.String(), root, len(files)); err != nil {
+		return "", err
 	}
-	if err := c.persistence.SetFileSet(out.SetId, root, len(files)); err != nil {
-		return err
-	}
-	return nil
+	return setId.String(), nil
 }
 
 func (c *Client) GetFile(setId string, index int) ([]byte, error) {

@@ -1,21 +1,34 @@
 package api
 
-type FilesInput struct {
-	Files []string `json:"files" validate:"required"`
+type PostFilesRequest struct {
+	Files []string `json:"files" validate:"required,max=1000"`
 }
 
-type FilesOutput struct {
+type PostFilesResponse struct {
 	Success bool   `json:"success"`
 	SetId   string `json:"setId"`
 	Root    string `json:"hash"`
 }
 
-type GetFileInput struct {
+type PostFileRequest struct {
+	Content  string `json:"content" validate:"required"`
+	SetCount int    `json:"setCount" validate:"required"`
+
+	SetId string `path:"setId"`
+	Index int    `path:"index"`
+}
+
+type PostFileResponse struct {
+	Success bool   `json:"success"`
+	Hash    string `json:"hash"`
+}
+
+type GetFileRequest struct {
 	SetId string `path:"setId" validate:"required"`
 	Index int    `path:"index" validate:"required"`
 }
 
-type GetFileOutput struct {
+type GetFileResponse struct {
 	File  string        `json:"file"`
 	Proof ProofResponse `json:"proof"`
 }

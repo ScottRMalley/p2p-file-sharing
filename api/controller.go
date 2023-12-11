@@ -20,20 +20,48 @@ func NewController(logger zerolog.Logger, service *Service) *Controller {
 	}
 }
 
-func (c *Controller) PostFiles(ctx *gin.Context, in *FilesInput) (*FilesOutput, error) {
+func (c *Controller) PostSet(_ *gin.Context, in *PostFilesRequest) (*PostFilesResponse, error) {
 	setId := uuid.New()
-	hash, err := c.service.Files(setId, bytes(in.Files))
+	fileBytes := make([][]byte, len(in.Files))
+	var err error
+	for i, file := range in.Files {
+		fileBytes[i], err = hexutil.Decode(file)
+		if err != nil {
+			return nil, err
+		}
+	}
+	hash, err := c.service.SaveFiles(setId, fileBytes)
 	if err != nil {
 		return nil, err
 	}
-	return &FilesOutput{
+	return &PostFilesResponse{
 		Success: true,
 		SetId:   setId.String(),
 		Root:    hash,
 	}, nil
 }
 
-func (c *Controller) GetFile(ctx *gin.Context, in *GetFileInput) (*GetFileOutput, error) {
+func (c *Controller) PostFile(_ *gin.Context, in *PostFileRequest) (*PostFileResponse, error) {
+	setId, err := uuid.Parse(in.SetId)
+	if err != nil {
+		return nil, err
+	}
+
+	fileBytes, err := hexutil.Decode(in.Content)
+	if err != nil {
+		return nil, err
+	}
+	hash, err := c.service.SaveFile(setId, in.Index, in.SetCount, fileBytes)
+	if err != nil {
+		return nil, err
+	}
+	return &PostFileResponse{
+		Success: true,
+		Hash:    hash,
+	}, nil
+}
+
+func (c *Controller) GetFile(_ *gin.Context, in *GetFileRequest) (*GetFileResponse, error) {
 	setId, err := uuid.Parse(in.SetId)
 	if err != nil {
 		return nil, err
@@ -42,7 +70,7 @@ func (c *Controller) GetFile(ctx *gin.Context, in *GetFileInput) (*GetFileOutput
 	if err != nil {
 		return nil, err
 	}
-	return &GetFileOutput{
+	return &GetFileResponse{
 		File: hexutil.Encode(file),
 		Proof: ProofResponse{
 			Proof: strings(proof),
@@ -52,17 +80,10 @@ func (c *Controller) GetFile(ctx *gin.Context, in *GetFileInput) (*GetFileOutput
 }
 
 func (c *Controller) RegisterRoutes(router *gin.RouterGroup) error {
-	router.POST("/sets", tonic.Handler(c.PostFiles, 201))
-	router.GET("/sets/:setId/files/:file", tonic.Handler(c.GetFile, 200))
+	router.POST("/sets", tonic.Handler(c.PostSet, 200))
+	router.POST("/sets/:setId/files/:index", tonic.Handler(c.PostFile, 200))
+	router.GET("/sets/:setId/files/:index", tonic.Handler(c.GetFile, 200))
 	return nil
-}
-
-func bytes(in []string) [][]byte {
-	out := make([][]byte, len(in))
-	for i, s := range in {
-		out[i] = []byte(s)
-	}
-	return out
 }
 
 func strings(in [][]byte) []string {

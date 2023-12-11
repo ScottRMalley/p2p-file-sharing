@@ -9,7 +9,6 @@ import (
 // but allows us to keep the DTO separate from what the service uses
 // internally
 type fileMetadata struct {
-	Id         string `json:"id"`
 	SenderId   string `json:"senderId"`
 	SetId      string `json:"setId"`
 	SetCount   int    `json:"setCount"`
@@ -19,10 +18,6 @@ type fileMetadata struct {
 type fileMsg struct {
 	Metadata fileMetadata `json:"metadata"`
 	Contents string       `json:"contents"`
-}
-
-type setAnnouncementMsg struct {
-	SetId string `json:"setId"`
 }
 
 type Connection struct {

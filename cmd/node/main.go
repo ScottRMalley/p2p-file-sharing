@@ -17,7 +17,6 @@ import (
 	"github.com/scottrmalley/p2p-file-challenge/api"
 	"github.com/scottrmalley/p2p-file-challenge/config"
 	"github.com/scottrmalley/p2p-file-challenge/networking"
-	"github.com/scottrmalley/p2p-file-challenge/protocol"
 	"github.com/scottrmalley/p2p-file-challenge/repository"
 	"golang.org/x/sync/errgroup"
 	"gorm.io/driver/sqlite"
@@ -53,7 +52,7 @@ func main() {
 		libp2p.New(libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")),
 	)
 
-	fmt.Println("Listen addresses:", node.Addrs())
+	rootLogger.Info().Msgf("Listen addresses: %s", node.Addrs())
 
 	// create a new PubSub service using the GossipSub router
 	ps := mustResolve(pubsub.NewGossipSub(ctx, node))
@@ -63,18 +62,20 @@ func main() {
 		panic(err)
 	}
 
-	// initialize the set announcement subscription
-	connection := networking.NewConnection(
-		ps,
-		node.ID(),
-	)
-	setAnnouncement := mustResolve(
-		networking.NewSetAnnouncement(
-			rootLogger.With().Str("ctx", "set-announcement").Logger(),
-			connection,
+	// initialize the file topic
+	fileTopic := mustResolve(
+		networking.NewFileTopic(
+			rootLogger.With().Str("ctx", "file-set").Logger(),
+			networking.NewConnection(
+				ps,
+				node.ID(),
+			),
 		),
 	)
 
+	// initialize the file repository with an in-memory sqlite database
+	// this would later be swapped out for something more sophisticated, but
+	// for demonstration purposes it works fine
 	repo := repository.NewFiles(
 		rootLogger.With().Str("ctx", "file-repo").Logger(),
 		mustResolve(gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})),
@@ -84,19 +85,10 @@ func main() {
 		panic(err)
 	}
 
-	processor := protocol.NewProcessor(
-		repo,
-	)
-
 	service := api.NewService(
 		rootLogger.With().Str("ctx", "api-service").Logger(),
-		protocol.NewBroadcaster(
-			rootLogger.With().Str("ctx", "broadcaster").Logger(),
-			connection,
-			setAnnouncement,
-		),
+		fileTopic,
 		repo,
-		processor,
 	)
 
 	controller := api.NewController(
@@ -105,10 +97,9 @@ func main() {
 	)
 
 	// stream new file sets to database
-	streamer := protocol.NewStreamer(
+	streamer := repository.NewStreamer(
 		rootLogger.With().Str("ctx", "streamer").Logger(),
-		processor,
-		connection,
+		repo,
 	)
 
 	router := defaultGinInit()
@@ -139,7 +130,8 @@ func main() {
 		},
 	)
 
-	group.Go(streamer.WatchNew(groupCtx, setAnnouncement.Read(groupCtx)))
+	// launch the streamer so it saves files reported by other peers
+	group.Go(streamer.WatchNew(groupCtx, fileTopic.Read(groupCtx)))
 
 	if err := group.Wait(); err != nil {
 		rootLogger.Fatal().Err(err).Msg("error in main")

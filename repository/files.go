@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/scottrmalley/p2p-file-challenge/model"
@@ -42,15 +44,13 @@ func (r *Files) Migrate() error {
 	return nil
 }
 
-func (r *Files) SaveFile(
-	id string,
-	file model.File,
-) error {
+func (r *Files) SaveFile(file model.File) error {
+	hash := hexutil.Encode(crypto.Keccak256(file.Contents))
 	result := r.db.Create(
 		&fileModel{
 			SetId:      file.Metadata.SetId,
 			SetCount:   file.Metadata.SetCount,
-			FileHash:   id,
+			FileHash:   hash,
 			FileNumber: file.Metadata.FileNumber,
 			Contents:   file.Contents,
 		},
@@ -83,18 +83,18 @@ func (r *Files) File(setId string, index int) (model.File, error) {
 	}, nil
 }
 
-func (r *Files) FileIds(setId string) ([]string, error) {
-	var files []fileIdModel
+func (r *Files) Files(setId string) ([][]byte, error) {
+	var files []fileModel
 
 	// using to fileIdModel automatically selects only the fileId column
-	result := r.db.Where("set_id = ?", setId).Find(&files)
+	result := r.db.Where("set_id = ?", setId).Find(&files).Order("file_number ASC")
 	if result.Error != nil {
 		return nil, errors.Wrap(result.Error, "failed to get file hashes")
 	}
 
-	hashes := make([]string, len(files))
+	hashes := make([][]byte, len(files))
 	for i, file := range files {
-		hashes[i] = file.FileHash
+		hashes[i] = file.Contents
 	}
 
 	return hashes, nil

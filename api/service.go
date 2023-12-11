@@ -2,73 +2,85 @@ package api
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+
 	"github.com/scottrmalley/p2p-file-challenge/model"
 	"github.com/scottrmalley/p2p-file-challenge/proof"
 )
 
-var ErrFileSetCorrupted = errors.New("file set corrupted")
+var ErrFileSetIncomplete = errors.New("file set incomplete")
 
-type broadcaster interface {
-	Broadcast(ctx context.Context, files []model.File) error
+type Writeer interface {
+	Write(ctx context.Context, file model.File) error
 }
-
-type processor interface {
-	ProcessFiles(setId string, files []model.File) ([]byte, error)
-}
-
 type persistence interface {
+	SaveFile(file model.File) error
 	File(setId string, index int) (model.File, error)
-	FileIds(setId string) ([]string, error)
+	Files(setId string) ([][]byte, error)
 }
 
 type Service struct {
-	logger      zerolog.Logger
-	broadcaster broadcaster
-	repo        persistence
-	processor   processor
+	logger  zerolog.Logger
+	Writeer Writeer
+	repo    persistence
 }
 
-func NewService(logger zerolog.Logger, broadcaster broadcaster, repo persistence, process processor) *Service {
+func NewService(logger zerolog.Logger, Writeer Writeer, repo persistence) *Service {
 	return &Service{
-		logger:      logger,
-		broadcaster: broadcaster,
-		repo:        repo,
-		processor:   process,
+		logger:  logger,
+		Writeer: Writeer,
+		repo:    repo,
 	}
 }
 
-func (s *Service) Files(setId uuid.UUID, files [][]byte) (string, error) {
-	var result []model.File
-	fileStream := make(chan model.File, len(files))
+func (s *Service) SaveFiles(setId uuid.UUID, files [][]byte) (string, error) {
 	for i, file := range files {
-		result = append(
-			result, model.File{
-				Metadata: model.FileMetadata{
-					SetId:      setId.String(),
-					SetCount:   len(files),
-					FileNumber: i,
-				},
-				Contents: file,
+		f := model.File{
+			Metadata: model.FileMetadata{
+				SetId:      setId.String(),
+				SetCount:   len(files),
+				FileNumber: i,
 			},
-		)
-		fileStream <- result[i]
+			Contents: file,
+		}
+		if err := s.Writeer.Write(context.Background(), f); err != nil {
+			return "", err
+		}
+		if err := s.repo.SaveFile(f); err != nil {
+			return "", err
+		}
 	}
-
-	err := s.broadcaster.Broadcast(context.Background(), result)
-	if err != nil {
-		return "", err
-	}
-
-	root, err := s.processor.ProcessFiles(setId.String(), result)
+	root, err := proof.Root(files)
 	if err != nil {
 		return "", err
 	}
 	return hexutil.Encode(root), nil
+}
+
+func (s *Service) SaveFile(setId uuid.UUID, index, setCount int, file []byte) (string, error) {
+	f := model.File{
+		Metadata: model.FileMetadata{
+			SetId:      setId.String(),
+			SetCount:   setCount,
+			FileNumber: index,
+		},
+		Contents: file,
+	}
+	err := s.Writeer.Write(context.Background(), f)
+	if err != nil {
+		return "", err
+	}
+
+	if err = s.repo.SaveFile(f); err != nil {
+		return "", err
+	}
+
+	return hexutil.Encode(crypto.Keccak256(file)), nil
 }
 
 func (s *Service) File(setId uuid.UUID, index int) ([]byte, [][]byte, uint64, error) {
@@ -76,32 +88,19 @@ func (s *Service) File(setId uuid.UUID, index int) ([]byte, [][]byte, uint64, er
 	if err != nil {
 		return nil, nil, 0, err
 	}
-	ids, err := s.repo.FileIds(setId.String())
+	files, err := s.repo.Files(setId.String())
 	if err != nil {
 		return nil, nil, 0, err
 	}
 
-	if len(ids) != file.Metadata.SetCount {
-		return nil, nil, 0, ErrFileSetCorrupted
-	}
-
-	if file.Metadata.Id != hexutil.Encode(crypto.Keccak256(file.Contents)) {
-		return nil, nil, 0, ErrFileSetCorrupted
-	}
-
-	leaves := make([][]byte, len(ids))
-	for i, id := range ids {
-		leaf, err := hexutil.Decode(id)
-		if err != nil {
-			return nil, nil, 0, err
-		}
-		leaves[i] = leaf
+	if len(files) != file.Metadata.SetCount {
+		return nil, nil, 0, ErrFileSetIncomplete
 	}
 
 	path, position, err := proof.Proof(
-		leaves,
-		crypto.Keccak256(file.Contents),
+		files,
+		file.Contents,
 	)
 
-	return file.Contents, path, position, err
+	return file.Contents, path, position, nil
 }
