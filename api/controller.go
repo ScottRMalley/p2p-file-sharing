@@ -8,6 +8,9 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Controller should handle encoding/decoding of requests
+// and uses Gin to handle HTTP requests / tonic to extract
+// request parameters
 type Controller struct {
 	logger  zerolog.Logger
 	service *Service
@@ -58,12 +61,15 @@ func (c *Controller) GetFile(_ *gin.Context, in *GetFileRequest) (*GetFileRespon
 	}, nil
 }
 
+// RegisterRoutes registers the routes on the given router group
 func (c *Controller) RegisterRoutes(router *gin.RouterGroup) error {
 	router.POST("/sets/:setId/files/:index", tonic.Handler(c.PostFile, 200))
 	router.GET("/sets/:setId/files/:index", tonic.Handler(c.GetFile, 200))
 	return nil
 }
 
+// strings converts a [][]byte to []string
+// and is just a helper function for the controller
 func strings(in [][]byte) []string {
 	out := make([]string, len(in))
 	for i, b := range in {

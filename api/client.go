@@ -2,10 +2,11 @@ package api
 
 import (
 	"fmt"
-	"github.com/go-resty/resty/v2"
-	"github.com/pkg/errors"
 	"net/url"
 	"strconv"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/pkg/errors"
 )
 
 // Client is intended to be strictly a client for the api. It is

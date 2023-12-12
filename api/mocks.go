@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/scottrmalley/p2p-file-challenge/model"
 )
 

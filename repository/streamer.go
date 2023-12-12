@@ -12,6 +12,8 @@ type persistence interface {
 	SaveFile(file model.File) error
 }
 
+// Streamer is responsible for watching new files as they are read from the
+// file topic and saving them to the persistence layer
 type Streamer struct {
 	logger zerolog.Logger
 
@@ -25,6 +27,8 @@ func NewStreamer(logger zerolog.Logger, repo persistence) *Streamer {
 	}
 }
 
+// WatchNew returns a func() error in order to be easily used with
+// errgroup.Group
 func (s *Streamer) WatchNew(ctx context.Context, files <-chan model.File) func() error {
 	return func() error {
 		for {

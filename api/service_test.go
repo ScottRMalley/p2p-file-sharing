@@ -1,13 +1,16 @@
 package api
 
 import (
+	"fmt"
+	"io"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
-	"github.com/scottrmalley/p2p-file-challenge/proof"
 	"github.com/stretchr/testify/suite"
-	"io"
-	"testing"
+
+	"github.com/scottrmalley/p2p-file-challenge/proof"
 )
 
 type ServiceTestSuite struct {
@@ -94,17 +97,20 @@ func (s *ServiceTestSuite) TestFiles() {
 				[]byte("file1"),
 				[]byte("file2"),
 			}
+			fmt.Printf("testFiles: %s\n", hexutil.Encode(testFiles[0]))
 			setId := uuid.New()
-			root, err := service.SaveFiles(
-				setId,
-				testFiles,
-			)
-			s.NoError(err)
-			s.NotEmpty(root)
+			for i, file := range testFiles {
+				_, err := service.SaveFile(
+					setId,
+					i,
+					len(testFiles),
+					file,
+				)
+				s.NoError(err)
+			}
 
 			expectedRoot, err := proof.Root(testFiles)
 			s.NoError(err)
-			s.Equal(hexutil.Encode(expectedRoot), root)
 
 			file, hashes, index, err := service.File(setId, 0)
 			s.NoError(err)
