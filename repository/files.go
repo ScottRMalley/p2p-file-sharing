@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/scottrmalley/p2p-file-challenge/model"
 	"gorm.io/gorm"
+	"sort"
 )
 
 type Files struct {
@@ -24,8 +25,18 @@ type fileModel struct {
 	FileNumber int
 }
 
-type fileIdModel struct {
-	FileHash string
+type fileModelstruct []fileModel
+
+func (f fileModelstruct) Len() int {
+	return len(f)
+}
+
+func (f fileModelstruct) Less(i, j int) bool {
+	return f[i].FileNumber < f[j].FileNumber
+}
+
+func (f fileModelstruct) Swap(i, j int) {
+	f[i], f[j] = f[j], f[i]
 }
 
 func NewFiles(logger zerolog.Logger, db *gorm.DB) *Files {
@@ -89,13 +100,21 @@ func (r *Files) Files(setId string) ([][]byte, error) {
 	// using to fileIdModel automatically selects only the fileId column
 	result := r.db.Where("set_id = ?", setId).Find(&files).Order("file_number ASC")
 	if result.Error != nil {
-		return nil, errors.Wrap(result.Error, "failed to get file hashes")
+		return nil, errors.Wrap(result.Error, "failed to get file contents")
+	}
+	if len(files) < 0 {
+		return nil, errors.New("no files found")
+	}
+	if len(files) != files[0].SetCount {
+		return nil, errors.New("incomplete file set")
 	}
 
-	hashes := make([][]byte, len(files))
+	sort.Sort(fileModelstruct(files))
+
+	contents := make([][]byte, len(files))
 	for i, file := range files {
-		hashes[i] = file.Contents
+		contents[i] = file.Contents
 	}
 
-	return hashes, nil
+	return contents, nil
 }

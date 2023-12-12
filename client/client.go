@@ -8,18 +8,22 @@ import (
 	"github.com/scottrmalley/p2p-file-challenge/proof"
 )
 
-type ClientPersistence interface {
+type Persistence interface {
 	SetFileSet(setId string, root []byte, count int) error
 	FileSet(setId string) ([]byte, int, error)
 	Sets() ([]string, error)
 }
 
+// Client is a client for the file service. It is separate from the
+// api.Client which is strictly a client for the api. This client
+// requires a persistence layer for storing the root hash, but in our
+// case we use an in-memory persistence layer.
 type Client struct {
-	persistence ClientPersistence
+	persistence Persistence
 	apiClient   *api.Client
 }
 
-func NewClient(persistence ClientPersistence, apiClient *api.Client) *Client {
+func NewClient(persistence Persistence, apiClient *api.Client) *Client {
 	return &Client{
 		persistence: persistence,
 		apiClient:   apiClient,

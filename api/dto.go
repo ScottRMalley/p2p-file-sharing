@@ -1,15 +1,5 @@
 package api
 
-type PostFilesRequest struct {
-	Files []string `json:"files" validate:"required,max=1000"`
-}
-
-type PostFilesResponse struct {
-	Success bool   `json:"success"`
-	SetId   string `json:"setId"`
-	Root    string `json:"hash"`
-}
-
 type PostFileRequest struct {
 	Content  string `json:"content" validate:"required"`
 	SetCount int    `json:"setCount" validate:"required"`

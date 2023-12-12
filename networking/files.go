@@ -5,11 +5,13 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog"
 	"github.com/scottrmalley/p2p-file-challenge/model"
+	"sync"
 )
 
 const FileTopicName = "file-set"
 
 type FileTopic struct {
+	mu  sync.Mutex
 	pub *IOTopic[*fileMsg]
 }
 
@@ -27,6 +29,8 @@ func NewFileTopic(
 }
 
 func (fs *FileTopic) Write(ctx context.Context, file model.File) error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
 	fm := &fileMsg{
 		Metadata: fileMetadata{
 			SenderId:   fs.pub.self.String(),

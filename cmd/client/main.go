@@ -1,13 +1,12 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/scottrmalley/p2p-file-challenge/api"
 	"github.com/scottrmalley/p2p-file-challenge/client"
+	"github.com/scottrmalley/p2p-file-challenge/config"
 	"math/rand"
-	"strings"
 	"time"
 )
 
@@ -19,22 +18,21 @@ func mustResolve[T any](in T, err error) T {
 }
 
 func main() {
-	nFiles := flag.Int("n", 500, "number of files to upload")
-	hosts := flag.String("hosts", "http://127.0.0.1:8080", "comma separated list of hosts")
-	flag.Parse()
+	cfg := config.ParseClientEnv("SVC")
+	nFiles := cfg.N
+	hostUrls := cfg.Hosts
 
-	fmt.Printf("Generating %d files\n", *nFiles)
-	files := make([][]byte, *nFiles)
-	for i := 0; i < *nFiles; i++ {
-		files[i] = []byte(uuid.New().String())
-	}
-
-	hostUrls := strings.Split(*hosts, ",")
 	if len(hostUrls) == 0 {
 		panic("no hosts specified")
 	}
 
-	fmt.Printf("Uploading %d files\n", *nFiles)
+	fmt.Printf("Generating %d files\n", nFiles)
+	files := make([][]byte, nFiles)
+	for i := 0; i < nFiles; i++ {
+		files[i] = []byte(uuid.New().String())
+	}
+
+	fmt.Printf("Uploading %d files\n", nFiles)
 	persistence := client.NewInMemoryPersistence()
 	client0 := client.NewClient(
 		persistence,
@@ -46,7 +44,7 @@ func main() {
 		panic(err)
 	}
 
-	fileToDownload := rand.Intn(*nFiles)
+	fileToDownload := rand.Intn(nFiles)
 	fmt.Printf("Downloading random file #%d\n", fileToDownload)
 	file, err := client0.GetFile(setId, fileToDownload)
 	if err != nil {
@@ -61,7 +59,7 @@ func main() {
 
 	// give them some time to gossip
 	fmt.Printf("Waiting for gossip to propagate\n")
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	fmt.Printf("attempting to download from other hosts\n")
 	for _, hostUrl := range hostUrls[1:] {

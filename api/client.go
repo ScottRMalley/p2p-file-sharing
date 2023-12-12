@@ -8,6 +8,9 @@ import (
 	"strconv"
 )
 
+// Client is intended to be strictly a client for the api. It is
+// separate from the client.Client which requires a persistence layer for
+// storing the root hash.
 type Client struct {
 	r       *resty.Client
 	baseUrl *url.URL
@@ -19,23 +22,6 @@ func NewClient(baseUrl string) (*Client, error) {
 		return nil, err
 	}
 	return &Client{r: resty.New(), baseUrl: u}, nil
-}
-
-func (c *Client) PostSet(in *PostFilesRequest) (*PostFilesResponse, error) {
-	out := new(PostFilesResponse)
-	req := c.r.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(in).
-		SetResult(out)
-
-	res, err := req.Post(c.baseUrl.String() + "/sets")
-	if err != nil {
-		return nil, err
-	}
-	if res.IsError() {
-		return nil, errors.Errorf("error posting files: %s", res.String())
-	}
-	return out, nil
 }
 
 func (c *Client) PostFile(in *PostFileRequest) (*PostFileResponse, error) {

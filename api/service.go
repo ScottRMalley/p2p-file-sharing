@@ -15,7 +15,7 @@ import (
 
 var ErrFileSetIncomplete = errors.New("file set incomplete")
 
-type Writeer interface {
+type Writer interface {
 	Write(ctx context.Context, file model.File) error
 }
 type persistence interface {
@@ -25,41 +25,17 @@ type persistence interface {
 }
 
 type Service struct {
-	logger  zerolog.Logger
-	Writeer Writeer
-	repo    persistence
+	logger zerolog.Logger
+	writer Writer
+	repo   persistence
 }
 
-func NewService(logger zerolog.Logger, Writeer Writeer, repo persistence) *Service {
+func NewService(logger zerolog.Logger, writer Writer, repo persistence) *Service {
 	return &Service{
-		logger:  logger,
-		Writeer: Writeer,
-		repo:    repo,
+		logger: logger,
+		writer: writer,
+		repo:   repo,
 	}
-}
-
-func (s *Service) SaveFiles(setId uuid.UUID, files [][]byte) (string, error) {
-	for i, file := range files {
-		f := model.File{
-			Metadata: model.FileMetadata{
-				SetId:      setId.String(),
-				SetCount:   len(files),
-				FileNumber: i,
-			},
-			Contents: file,
-		}
-		if err := s.Writeer.Write(context.Background(), f); err != nil {
-			return "", err
-		}
-		if err := s.repo.SaveFile(f); err != nil {
-			return "", err
-		}
-	}
-	root, err := proof.Root(files)
-	if err != nil {
-		return "", err
-	}
-	return hexutil.Encode(root), nil
 }
 
 func (s *Service) SaveFile(setId uuid.UUID, index, setCount int, file []byte) (string, error) {
@@ -71,7 +47,7 @@ func (s *Service) SaveFile(setId uuid.UUID, index, setCount int, file []byte) (s
 		},
 		Contents: file,
 	}
-	err := s.Writeer.Write(context.Background(), f)
+	err := s.writer.Write(context.Background(), f)
 	if err != nil {
 		return "", err
 	}

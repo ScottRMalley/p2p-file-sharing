@@ -26,7 +26,7 @@ func (s *ServiceTestSuite) SetupTest() {
 func (s *ServiceTestSuite) TestFiles() {
 	t := s.T()
 	t.Run(
-		"it should return a set id", func(t *testing.T) {
+		"it should save a set", func(t *testing.T) {
 			service := NewService(
 				zerolog.New(io.Discard),
 				s.repo,
@@ -36,16 +36,23 @@ func (s *ServiceTestSuite) TestFiles() {
 				[]byte("file1"),
 				[]byte("file2"),
 			}
-			root, err := service.SaveFiles(
-				uuid.New(),
-				testFiles,
-			)
-			s.NoError(err)
-			s.NotEmpty(root)
+			setId := uuid.New()
+			for i, file := range testFiles {
+				_, err := service.SaveFile(
+					setId,
+					i,
+					len(testFiles),
+					file,
+				)
+				s.NoError(err)
+			}
 
-			expectedRoot, err := proof.Root(testFiles)
+			files, err := s.repo.Files(setId.String())
 			s.NoError(err)
-			s.Equal(hexutil.Encode(expectedRoot), root)
+			s.Len(files, len(testFiles))
+			for i, file := range files {
+				s.Equal(testFiles[i], file)
+			}
 		},
 	)
 	t.Run(
@@ -60,16 +67,15 @@ func (s *ServiceTestSuite) TestFiles() {
 				[]byte("file2"),
 			}
 			setId := uuid.New()
-			root, err := service.SaveFiles(
-				setId,
-				testFiles,
-			)
-			s.NoError(err)
-			s.NotEmpty(root)
-
-			expectedRoot, err := proof.Root(testFiles)
-			s.NoError(err)
-			s.Equal(hexutil.Encode(expectedRoot), root)
+			for i, file := range testFiles {
+				_, err := service.SaveFile(
+					setId,
+					i,
+					len(testFiles),
+					file,
+				)
+				s.NoError(err)
+			}
 
 			file, _, _, err := service.File(setId, 0)
 			s.NoError(err)
