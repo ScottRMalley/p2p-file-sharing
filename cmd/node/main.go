@@ -47,7 +47,13 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
+	env := config.ParseHttpEnv("SVC")
 	rootLogger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	if env.Debug {
+		rootLogger = rootLogger.Level(zerolog.DebugLevel)
+	} else {
+		rootLogger = rootLogger.Level(zerolog.InfoLevel)
+	}
 
 	// create a new libp2p Host that listens on a random TCP port
 	node := mustResolve(
@@ -110,7 +116,7 @@ func main() {
 	}
 
 	group, groupCtx := errgroup.WithContext(ctx)
-	env := config.ParseHttpEnv("SVC")
+
 	group.Go(
 		func() error {
 			rootLogger.Info().Int("port", env.Port).Msg("starting http server")

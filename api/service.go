@@ -3,9 +3,6 @@ package api
 import (
 	"context"
 
-	"github.com/ethereum/go-ethereum/crypto"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -57,7 +54,7 @@ func (s *Service) SaveFile(setId uuid.UUID, index, setCount int, file []byte) (s
 		return "", err
 	}
 
-	return hexutil.Encode(crypto.Keccak256(file)), nil
+	return proof.Encode(proof.Hash(file)), nil
 }
 
 func (s *Service) File(setId uuid.UUID, index int) ([]byte, [][]byte, uint64, error) {

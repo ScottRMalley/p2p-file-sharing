@@ -36,7 +36,7 @@ func (s *Streamer) WatchNew(ctx context.Context, files <-chan model.File) func()
 			case <-ctx.Done():
 				return nil
 			case file := <-files:
-				s.logger.Info().
+				s.logger.Debug().
 					Int("file-number", file.Metadata.FileNumber).
 					Str("set-id", file.Metadata.SetId).
 					Msg("received file")

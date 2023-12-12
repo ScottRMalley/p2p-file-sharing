@@ -4,13 +4,12 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	"github.com/scottrmalley/p2p-file-sharing/model"
+	"github.com/scottrmalley/p2p-file-sharing/proof"
 )
 
 type Files struct {
@@ -62,7 +61,7 @@ func (r *Files) Migrate() error {
 func (r *Files) SaveFile(file model.File) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	hash := hexutil.Encode(crypto.Keccak256(file.Contents))
+	hash := proof.Encode(proof.Hash(file.Contents))
 	result := r.db.Create(
 		&fileModel{
 			SetId:      file.Metadata.SetId,

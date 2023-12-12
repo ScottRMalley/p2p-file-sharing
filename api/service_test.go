@@ -1,11 +1,9 @@
 package api
 
 import (
-	"fmt"
 	"io"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
@@ -97,7 +95,7 @@ func (s *ServiceTestSuite) TestFiles() {
 				[]byte("file1"),
 				[]byte("file2"),
 			}
-			fmt.Printf("testFiles: %s\n", hexutil.Encode(testFiles[0]))
+
 			setId := uuid.New()
 			for i, file := range testFiles {
 				_, err := service.SaveFile(

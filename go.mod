@@ -15,7 +15,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.31.0
 	github.com/stretchr/testify v1.8.4
-	github.com/wealdtech/go-merkletree v1.0.0
 	golang.org/x/sync v0.4.0
 	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.25.5

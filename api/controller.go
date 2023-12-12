@@ -1,11 +1,12 @@
 package api
 
 import (
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/loopfz/gadgeto/tonic"
 	"github.com/rs/zerolog"
+
+	"github.com/scottrmalley/p2p-file-sharing/proof"
 )
 
 // Controller should handle encoding/decoding of requests
@@ -29,7 +30,7 @@ func (c *Controller) PostFile(_ *gin.Context, in *PostFileRequest) (*PostFileRes
 		return nil, err
 	}
 
-	fileBytes, err := hexutil.Decode(in.Content)
+	fileBytes, err := proof.Decode(in.Content)
 	if err != nil {
 		return nil, err
 	}
@@ -48,14 +49,14 @@ func (c *Controller) GetFile(_ *gin.Context, in *GetFileRequest) (*GetFileRespon
 	if err != nil {
 		return nil, err
 	}
-	file, proof, index, err := c.service.File(setId, in.Index)
+	file, hashes, index, err := c.service.File(setId, in.Index)
 	if err != nil {
 		return nil, err
 	}
 	return &GetFileResponse{
-		File: hexutil.Encode(file),
+		File: proof.Encode(file),
 		Proof: ProofResponse{
-			Proof: strings(proof),
+			Proof: strings(hashes),
 			Index: index,
 		},
 	}, nil
@@ -73,7 +74,7 @@ func (c *Controller) RegisterRoutes(router *gin.RouterGroup) error {
 func strings(in [][]byte) []string {
 	out := make([]string, len(in))
 	for i, b := range in {
-		out[i] = hexutil.Encode(b)
+		out[i] = proof.Encode(b)
 	}
 	return out
 }

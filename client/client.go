@@ -1,7 +1,6 @@
 package client
 
 import (
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -57,7 +56,7 @@ func (c *Client) AddFile(setId string, index int, file []byte) error {
 			SetId:    setId,
 			SetCount: count,
 			Index:    index,
-			Content:  hexutil.Encode(file),
+			Content:  proof.Encode(file),
 		},
 	); err != nil {
 		return err
@@ -74,7 +73,7 @@ func (c *Client) PostFiles(files [][]byte) (string, error) {
 				SetId:    setId.String(),
 				SetCount: len(files),
 				Index:    i,
-				Content:  hexutil.Encode(file),
+				Content:  proof.Encode(file),
 			},
 		); err != nil {
 			return "", err
@@ -111,7 +110,7 @@ func (c *Client) GetFile(setId string, index int) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	file, err := hexutil.Decode(out.File)
+	file, err := proof.Decode(out.File)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +134,7 @@ func (c *Client) SetSize(setId string) (int, error) {
 func decodeProofResponse(in api.ProofResponse) (hashes [][]byte, index uint64, err error) {
 	hashes = make([][]byte, len(in.Proof))
 	for i, hash := range in.Proof {
-		hashes[i], err = hexutil.Decode(hash)
+		hashes[i], err = proof.Decode(hash)
 		if err != nil {
 			return nil, 0, err
 		}

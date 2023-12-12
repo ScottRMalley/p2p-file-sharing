@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog"
 
 	"github.com/scottrmalley/p2p-file-sharing/model"
+	"github.com/scottrmalley/p2p-file-sharing/proof"
 )
 
 const FileTopicName = "file-set"
@@ -40,7 +40,7 @@ func (fs *FileTopic) Write(ctx context.Context, file model.File) error {
 			SetCount:   file.Metadata.SetCount,
 			FileNumber: file.Metadata.FileNumber,
 		},
-		Contents: hexutil.Encode(file.Contents),
+		Contents: proof.Encode(file.Contents),
 	}
 
 	return fs.pub.Write(ctx, fm)
@@ -53,7 +53,7 @@ func (fs *FileTopic) Read(ctx context.Context) <-chan model.File {
 	go func() {
 		defer close(files)
 		for fm := range fs.pub.Read(ctx) {
-			content, err := hexutil.Decode(fm.Contents)
+			content, err := proof.Decode(fm.Contents)
 			if err != nil {
 				fs.pub.logger.Error().Err(err).Msg("failed to decode file contents")
 				continue

@@ -161,6 +161,6 @@ changes to the underlying protocol, but could be implemented as a wrapper around
 
 This project makes use of the following libraries:
 - [libp2p](https://libp2p.io/): A modular networking stack for peer-to-peer applications
-- [go-merkletree](https://github.com/wealdtech/go-merkletree): A simple merkle tree implementation in Golang
 - [Gin Web Framework](https://github.com/gin-gonic/gin): A performant web framework for writing Golang APIs
 - [Gorm](https://gorm.io/): A simple ORM for Golang
+- [Go Ethereum](https://github.com/ethereum/go-ethereum): Only used for encoding and hashing 

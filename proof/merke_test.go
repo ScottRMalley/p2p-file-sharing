@@ -28,17 +28,19 @@ func (s *ProofTestSuite) TestProof() {
 			data := [][]byte{
 				[]byte("foo"),
 				[]byte("bar"),
+				[]byte("baz"),
+				[]byte("qux"),
 			}
 			expectedRoot := crypto.Keccak256(
-				crypto.Keccak256([]byte("foo")),
-				crypto.Keccak256([]byte("bar")),
+				crypto.Keccak256(crypto.Keccak256([]byte("foo")), crypto.Keccak256([]byte("bar"))),
+				crypto.Keccak256(crypto.Keccak256([]byte("baz")), crypto.Keccak256([]byte("qux"))),
 			)
 
-			root, err := Root(data)
+			tree, err := NewMerkleTree(data)
 			require.NoError(t, err)
-			require.NotNil(t, root)
+			require.NotNil(t, tree)
 
-			require.Equal(t, expectedRoot, root)
+			require.Equal(t, Encode(expectedRoot), Encode(tree.Root()))
 		},
 	)
 
@@ -47,16 +49,21 @@ func (s *ProofTestSuite) TestProof() {
 			data := [][]byte{
 				[]byte("foo"),
 				[]byte("bar"),
+				[]byte("baz"),
+				[]byte("qux"),
 			}
 			leaf := []byte("foo")
 
 			expectedProof := [][]byte{
 				crypto.Keccak256([]byte("bar")),
+				crypto.Keccak256(crypto.Keccak256([]byte("baz")), crypto.Keccak256([]byte("qux"))),
 			}
 
-			proof, index, err := Proof(data, leaf)
+			tree, err := NewMerkleTree(data)
 			require.NoError(t, err)
-			require.NotNil(t, proof)
+			require.NotNil(t, tree)
+
+			proof, index, err := tree.Proof(leaf)
 
 			require.Equal(t, uint64(0), index)
 			require.Equal(t, expectedProof, proof)
@@ -65,16 +72,22 @@ func (s *ProofTestSuite) TestProof() {
 
 	t.Run(
 		"it should verify the proof", func(t *testing.T) {
-			leaf := []byte("foo")
+			leaf := []byte("bar")
 			proof := [][]byte{
-				crypto.Keccak256([]byte("bar")),
+				crypto.Keccak256([]byte("foo")),
+				crypto.Keccak256(crypto.Keccak256([]byte("baz")), crypto.Keccak256([]byte("qux"))),
 			}
 			root := crypto.Keccak256(
-				crypto.Keccak256([]byte("foo")),
-				crypto.Keccak256([]byte("bar")),
+				crypto.Keccak256(
+					crypto.Keccak256([]byte("foo")),
+					crypto.Keccak256([]byte("bar")),
+				), crypto.Keccak256(
+					crypto.Keccak256([]byte("baz")),
+					crypto.Keccak256([]byte("qux")),
+				),
 			)
 
-			valid, err := Verify(leaf, proof, uint64(0), root)
+			valid, err := VerifyProof(leaf, proof, uint64(1), root)
 			require.NoError(t, err)
 			require.True(t, valid)
 		},
@@ -96,13 +109,16 @@ func (s *ProofTestSuite) TestProof() {
 			}
 			leaf := []byte("corgie")
 
-			proof, index, err := Proof(data, leaf)
+			tree, err := NewMerkleTree(data)
+			require.NoError(t, err)
+			require.NotNil(t, tree)
+
+			proof, index, err := tree.Proof(leaf)
 			require.NoError(t, err)
 
-			root, err := Root(data)
-			require.NoError(t, err)
+			root := tree.Root()
 
-			valid, err := Verify(leaf, proof, index, root)
+			valid, err := VerifyProof(leaf, proof, index, root)
 			require.NoError(t, err)
 			require.True(t, valid)
 		},
