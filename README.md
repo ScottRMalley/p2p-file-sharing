@@ -23,12 +23,21 @@ To run the example client script, run the following command:
 docker compose --profile client up
 ```
 
-## Improvements
-### Features
-#### Backsyncing
+## Future Improvements
+### Backsyncing
 At the moment, when a node joins the network, it will subscribe to the `topics` topic. This means that it will 
 receive a message each time there is a new file list to store, and it should have a record of every file posted to 
 the network from that point on.
 
 This is not ideal, as we currently don't have any way of syncing nodes to the current state of the network, they 
 will only replicate future state. 
+
+### Filesharing
+In the current design, files are shared between network nodes by publishing them to a fixed topic, subscribed to by 
+all nodes. This works fine as the challenge specified that the file sizes were small, however in a production 
+scenario, we would probably want the file topic to just announce file availability, and then to 
+
+### Node Discovery
+Node discovery is currently done by mDNS, which works for demonstration purposes, as all nodes are running on the
+same local network. In a production use case, this should be migrated to use a DHT or some other method, as we 
+wouldn't expect all nodes to be on the same network.

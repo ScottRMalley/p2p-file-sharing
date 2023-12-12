@@ -3,7 +3,7 @@ package config
 import "github.com/kelseyhightower/envconfig"
 
 type ClientEnv struct {
-	N     int      `split_words:"true" required:"true" default:"8080"`
+	N     int      `split_words:"true" required:"true" default:"1000"`
 	Hosts []string `split_words:"true" required:"true" default:"http://localhost:8080,http://localhost:8081,http://localhost:8082"`
 }
 

@@ -3,6 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/braintree/manners"
 	"github.com/gin-gonic/gin"
 	"github.com/libp2p/go-libp2p"
@@ -14,17 +19,14 @@ import (
 	"github.com/loopfz/gadgeto/tonic/utils/jujerr"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"golang.org/x/sync/errgroup"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/scottrmalley/p2p-file-challenge/api"
 	"github.com/scottrmalley/p2p-file-challenge/config"
 	"github.com/scottrmalley/p2p-file-challenge/networking"
 	"github.com/scottrmalley/p2p-file-challenge/repository"
-	"golang.org/x/sync/errgroup"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 // DiscoveryInterval is how often we re-publish our mDNS records.
@@ -78,7 +80,7 @@ func main() {
 	// for demonstration purposes it works fine
 	repo := repository.NewFiles(
 		rootLogger.With().Str("ctx", "file-repo").Logger(),
-		mustResolve(gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})),
+		mustResolve(gorm.Open(sqlite.Open("file::memory:"), &gorm.Config{})),
 	)
 
 	if err := repo.Migrate(); err != nil {
@@ -166,6 +168,8 @@ func setupDiscovery(h host.Host) error {
 	s := mdns.NewMdnsService(h, DiscoveryServiceTag, &discoveryNotifee{h: h})
 	return s.Start()
 }
+
+// defaultGinInit initializes a gin router with default middleware
 func defaultGinInit() *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())

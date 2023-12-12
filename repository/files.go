@@ -1,17 +1,21 @@
 package repository
 
 import (
+	"sort"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"github.com/scottrmalley/p2p-file-challenge/model"
 	"gorm.io/gorm"
-	"sort"
+
+	"github.com/scottrmalley/p2p-file-challenge/model"
 )
 
 type Files struct {
 	logger zerolog.Logger
+	mu     sync.Mutex
 	db     *gorm.DB
 }
 
@@ -56,6 +60,8 @@ func (r *Files) Migrate() error {
 }
 
 func (r *Files) SaveFile(file model.File) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	hash := hexutil.Encode(crypto.Keccak256(file.Contents))
 	result := r.db.Create(
 		&fileModel{
@@ -102,7 +108,7 @@ func (r *Files) Files(setId string) ([][]byte, error) {
 	if result.Error != nil {
 		return nil, errors.Wrap(result.Error, "failed to get file contents")
 	}
-	if len(files) < 0 {
+	if len(files) < 1 {
 		return nil, errors.New("no files found")
 	}
 	if len(files) != files[0].SetCount {

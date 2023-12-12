@@ -4,6 +4,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+
 	"github.com/scottrmalley/p2p-file-challenge/api"
 	"github.com/scottrmalley/p2p-file-challenge/proof"
 )
@@ -30,6 +31,41 @@ func NewClient(persistence Persistence, apiClient *api.Client) *Client {
 	}
 }
 
+// CreateSet will not assume the provided fileset is complete
+// the api will only return valid proofs once the number of files uploaded
+// matches the setCount
+func (c *Client) CreateSet(root []byte, setCount int) (string, error) {
+	setId := uuid.New()
+	if err := c.persistence.SetFileSet(setId.String(), root, setCount); err != nil {
+		return "", err
+	}
+	return setId.String(), nil
+}
+
+// AddFile will add a file to the file set. If the file set is complete
+// it will return an error
+func (c *Client) AddFile(setId string, index int, file []byte) error {
+	_, count, err := c.persistence.FileSet(setId)
+	if err != nil {
+		return err
+	}
+	if count <= index {
+		return errors.Errorf("index %d out of range for file set %s", index, setId)
+	}
+	if _, err := c.apiClient.PostFile(
+		&api.PostFileRequest{
+			SetId:    setId,
+			SetCount: count,
+			Index:    index,
+			Content:  hexutil.Encode(file),
+		},
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+// PostFiles will assume the file set provided is complete
 func (c *Client) PostFiles(files [][]byte) (string, error) {
 	setId := uuid.New()
 	for i, file := range files {
@@ -55,12 +91,13 @@ func (c *Client) PostFiles(files [][]byte) (string, error) {
 	return setId.String(), nil
 }
 
+// GetFile will verify the proof returned by the api or return an error
 func (c *Client) GetFile(setId string, index int) ([]byte, error) {
 	root, count, err := c.persistence.FileSet(setId)
 	if err != nil {
 		return nil, err
 	}
-	if count < index {
+	if count <= index {
 		return nil, errors.Errorf("index %d out of range for file set %s", index, setId)
 	}
 	out, err := c.apiClient.GetFile(

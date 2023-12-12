@@ -1,10 +1,11 @@
 package proof
 
 import (
+	"testing"
+
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 // ProofTestSuite is the test suite for the proof package.

@@ -2,10 +2,12 @@ package networking
 
 import (
 	"context"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog"
+
 	"github.com/scottrmalley/p2p-file-challenge/model"
-	"sync"
 )
 
 const FileTopicName = "file-set"
