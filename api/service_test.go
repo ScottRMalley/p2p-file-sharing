@@ -10,7 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/scottrmalley/p2p-file-challenge/proof"
+	"github.com/scottrmalley/p2p-file-sharing/proof"
 )
 
 type ServiceTestSuite struct {

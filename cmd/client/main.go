@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/scottrmalley/p2p-file-challenge/api"
-	"github.com/scottrmalley/p2p-file-challenge/client"
-	"github.com/scottrmalley/p2p-file-challenge/config"
-	"github.com/scottrmalley/p2p-file-challenge/proof"
+	"github.com/scottrmalley/p2p-file-sharing/api"
+	"github.com/scottrmalley/p2p-file-sharing/client"
+	"github.com/scottrmalley/p2p-file-sharing/config"
+	"github.com/scottrmalley/p2p-file-sharing/proof"
 )
 
 func mustResolve[T any](in T, err error) T {

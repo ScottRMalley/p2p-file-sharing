@@ -5,8 +5,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/scottrmalley/p2p-file-challenge/api"
-	"github.com/scottrmalley/p2p-file-challenge/proof"
+	"github.com/scottrmalley/p2p-file-sharing/api"
+	"github.com/scottrmalley/p2p-file-sharing/proof"
 )
 
 type Persistence interface {

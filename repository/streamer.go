@@ -5,7 +5,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/scottrmalley/p2p-file-challenge/model"
+	"github.com/scottrmalley/p2p-file-sharing/model"
 )
 
 type persistence interface {

@@ -1,4 +1,4 @@
-module github.com/scottrmalley/p2p-file-challenge
+module github.com/scottrmalley/p2p-file-sharing
 
 go 1.20
 

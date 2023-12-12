@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -9,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
-	"github.com/scottrmalley/p2p-file-challenge/model"
-	"github.com/scottrmalley/p2p-file-challenge/proof"
+	"github.com/scottrmalley/p2p-file-sharing/model"
+	"github.com/scottrmalley/p2p-file-sharing/proof"
 )
 
 var ErrFileSetIncomplete = errors.New("file set incomplete")

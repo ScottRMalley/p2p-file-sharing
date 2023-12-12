@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/rs/zerolog"
 
-	"github.com/scottrmalley/p2p-file-challenge/model"
+	"github.com/scottrmalley/p2p-file-sharing/model"
 )
 
 const FileTopicName = "file-set"

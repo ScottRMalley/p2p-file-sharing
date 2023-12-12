@@ -23,10 +23,10 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"github.com/scottrmalley/p2p-file-challenge/api"
-	"github.com/scottrmalley/p2p-file-challenge/config"
-	"github.com/scottrmalley/p2p-file-challenge/networking"
-	"github.com/scottrmalley/p2p-file-challenge/repository"
+	"github.com/scottrmalley/p2p-file-sharing/api"
+	"github.com/scottrmalley/p2p-file-sharing/config"
+	"github.com/scottrmalley/p2p-file-sharing/networking"
+	"github.com/scottrmalley/p2p-file-sharing/repository"
 )
 
 // DiscoveryInterval is how often we re-publish our mDNS records.

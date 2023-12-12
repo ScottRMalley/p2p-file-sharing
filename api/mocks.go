@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/scottrmalley/p2p-file-challenge/model"
+	"github.com/scottrmalley/p2p-file-sharing/model"
 )
 
 type persistenceMock struct {
